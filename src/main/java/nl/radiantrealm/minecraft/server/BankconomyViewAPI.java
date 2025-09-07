@@ -8,6 +8,7 @@ import nl.radiantrealm.library.http.StatusCode;
 import nl.radiantrealm.library.utils.JsonUtils;
 import nl.radiantrealm.library.utils.Result;
 import nl.radiantrealm.minecraft.Main;
+import nl.radiantrealm.minecraft.auth.CookieUtils;
 import nl.radiantrealm.minecraft.cache.PlayerAccountCache;
 import nl.radiantrealm.minecraft.cache.SavingsAccountCache;
 import nl.radiantrealm.minecraft.cache.SavingsOwnerCache;
@@ -23,6 +24,15 @@ public class BankconomyViewAPI implements RequestHandler {
 
     @Override
     public void handle(HttpRequest request) throws Exception {
+        UUID playerUUID = CookieUtils.getSessionTOken(request.exchange());
+
+        if (playerUUID == null) {
+            try (request) {
+                request.sendStatusResponse(StatusCode.UNAUTHORIZED);
+                return;
+            }
+        }
+
         JsonObject requestBody = Result.function(() -> {
             try {
                 return JsonUtils.getJsonObject(request.getRequestBody());
@@ -53,8 +63,6 @@ public class BankconomyViewAPI implements RequestHandler {
             }
         }
 
-        UUID playerUUID = UUID.randomUUID(); //Constantinopel, verrijk UUID vanuit cookies!
-
         JsonObject responseBody = new JsonObject();
 
         for (Map.Entry<String, JsonElement> entry : requestedViews.entrySet()) {
@@ -62,6 +70,7 @@ public class BankconomyViewAPI implements RequestHandler {
                 case "player_account_overview" -> BankconomyViewBuilder.buildPlayerAccountOverview(playerUUID);
                 case "savings_accounts_list" -> BankconomyViewBuilder.buildSavingsAccountsList(playerUUID);
                 case "savings_account_detailed" -> getSavingsAccountDetailed(entry.getValue());
+                case "recent_savings_transactions" -> getRecentSavingsTransactions(entry.getValue());
 
                 default -> {
                     JsonObject object = new JsonObject();
@@ -71,8 +80,12 @@ public class BankconomyViewAPI implements RequestHandler {
             });
         }
 
-        request.sendResponse(StatusCode.OK, responseBody);
+        try (request) {
+            request.sendResponse(StatusCode.OK, responseBody);
+        }
     }
+
+    //The two methods below are quite WET...
 
     private JsonObject getSavingsAccountDetailed(JsonElement element) throws Exception {
         JsonObject object = Result.function(() -> {
@@ -104,5 +117,32 @@ public class BankconomyViewAPI implements RequestHandler {
         }
 
         return BankconomyViewBuilder.buildSavingsAccountDetailed(savingsUUID);
+    }
+
+    private JsonObject getRecentSavingsTransactions(JsonElement element) throws Exception {
+        JsonObject object = Result.function(() -> {
+            try {
+                return element.getAsJsonObject();
+            } catch (Exception e) {
+                return null;
+            }
+        });
+
+        JsonObject result = new JsonObject();
+
+        if (object == null) {
+            result.addProperty("error", "Missing input parameters.");
+            return result;
+        }
+
+        UUID savingsUUID = Result.function(() -> {
+            try {
+                return JsonUtils.getJsonUUID(object, "savings_uuid");
+            } catch (Exception e) {
+                return null;
+            }
+        });
+
+        return BankconomyViewBuilder.recentSavingsTransactions.get(savingsUUID);
     }
 }

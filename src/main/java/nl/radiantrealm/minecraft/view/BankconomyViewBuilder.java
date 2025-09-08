@@ -15,6 +15,7 @@ import nl.radiantrealm.minecraft.record.SavingsAccount;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -72,7 +73,7 @@ public class BankconomyViewBuilder {
     public static class RecentSavingsTransactions extends CacheRegistry<UUID, JsonObject> {
 
         public RecentSavingsTransactions() {
-            super(123456);
+            super(Duration.ofMinutes(5));
         }
 
         @Override

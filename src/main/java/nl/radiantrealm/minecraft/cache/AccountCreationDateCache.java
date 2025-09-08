@@ -6,12 +6,13 @@ import nl.radiantrealm.minecraft.Database;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.time.Duration;
 import java.util.UUID;
 
 public class AccountCreationDateCache extends CacheRegistry<UUID, Long> {
 
     public AccountCreationDateCache() {
-        super(900000);
+        super(Duration.ofHours(6));
     }
 
     @Override

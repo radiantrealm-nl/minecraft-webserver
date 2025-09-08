@@ -7,6 +7,7 @@ import nl.radiantrealm.minecraft.Database;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.time.Duration;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
@@ -14,7 +15,7 @@ import java.util.UUID;
 public class SavingsOwnerCache extends CacheRegistry<UUID, Set<UUID>> {
 
     public SavingsOwnerCache() {
-        super(900000);
+        super(Duration.ofMinutes(15));
     }
 
     @Override
